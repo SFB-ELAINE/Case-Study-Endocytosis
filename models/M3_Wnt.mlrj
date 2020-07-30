@@ -1,0 +1,240 @@
+// Single-cell model of the Wnt signaling pathway, 
+// no Wnt diffusion in space, no cell cycle dynamics included,
+// compartment volumes are fixed,
+// stochastic parameter set no. 4 (see Orianne's PLoS paper)
+// compartment volumes based on measurements in Mazemondet 
+// et al (2011), Cellular and Molecular Biology Letters 16: 515-538.
+
+// Author: Fiete Haack
+// Contributed: Kai Budde
+// Last edited: 2020/07/22
+
+
+// +++++++++++++++++++++++
+// ++++++ Constants ++++++
+// +++++++++++++++++++++++
+
+aa:  6.022e23;    // Avogradro constant
+vm:  1.37e-14;    // Volume of membrane in (dm)^3 (=1L)
+rho: 0.1;         // Raft fluidity 
+
+// ++++++++++++++++++++++++++++++++++++
+// ++++++ initial species counts ++++++
+// ++++++++++++++++++++++++++++++++++++
+
+// ** Membrane signalling **
+nCells:    1;     // Number of initial cells
+nLR:       1;     // Number of initial lipid rafts
+
+nLRP6:     4000;  // Number of initial cell surface LRP6 receptors
+nWnt:      2000;  // Number of initial extracellular Wnt ligands
+nLRP6inLR: 0;     // Number of initial LRP6 in lipid rafts
+nCK1y:     5000;  // Number of initial membrane-bound CK1y
+
+// ** beta-catenin signalling **
+nbetacyt:  12989; // Number of initial cytosolic Beta-Catenin
+nbetanuc:  5282;  // Number of initial nuclear Beta-Catenin
+nAxin:     252;   // Number of initial cytosolic Axin
+nAxinP:    219;   // Number of initial cytosolic phosphorylated Axin
+
+// ++++++++++++++++++++++++++++++++++++++
+// +++++ reaction rate coefficients +++++
+// ++++++++++++++++++++++++++++++++++++++
+
+// ** Membrane Signalling **
+
+// LRP6
+kLWntBind:      2.16e6;  // L/mol/min // Wnt association rate
+kLWntUnbind:    0.02;    // 1/min     // Wnt dissociation rate
+kLphos:         6.73E-1; // 1/min     // Phosphorylation rate of LRP6 by CK1y
+kLdephos:       4.7E-2;  // 1/min     // Dephosphorylation rate of LRP6
+kLAxinBind:     5;       // 1/min     // LRP6-Axin association rate constant
+kLAxinUnbind:   3E-4;    // 1/min     // LRP6-Axin dissociation rate constant
+
+// Lipid Rafts
+kLRAss:         1e9;     // L/mol/min // Shuttling rate between lo and ld domains
+
+// ** Beta-Catenin signalling **
+
+// Axin
+kAAp:           0.03;    // 1/min     // Basal phosphorylation rate constant of Axin
+kApA:           0.03;    // 1/min     // Basal dephosphorylation rate constant of Axin-P
+kAdeg:          4.48E-3; // 1/min     // Axin degradation rate constant
+kAsyn:          4E-4;    // 1/min     // Axin synthesis rate constant
+
+// Beta Catenin
+kBetaSyn:       600;     // 1/min     // Beta-Catenin synthesis rate constant
+kBetaDegAct:    2.1E-4;  // 1/min     // Axin-driven degradation rate constant of Beta-Catenin
+kBetaDeg:       1.13E-4; // 1/min     // Basal degradation rate constant of Beta-Catenin
+kBetaIn:        0.0549;  // 1/min     // Beta-Catenin shuttling rate constant into nucleus
+kBetaOut:       0.135;   // 1/min     // Beta-Catenin shuttling rate constant out of nucleus
+
+ke_nonraft:     0.05;    // 1/min     // Internalization rate (outside of rafts)
+ke_raft:        0.05;    // 1/min     // Raft-associated internalization rate
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++ species definitions (number of attributes) +++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Cell()[]; 
+Membrane()[];
+Nuc()[];
+Wnt();
+Bcat();
+Axin(string); // phosphorylation state
+Lrp6(string, string); // phosphorylation state, binding state
+Lrp6Axin(string); // phosphorylation state of axin
+CK1y(); 
+LR()[]; 
+Endosome()[]; 
+
+Lrp6Dummy(); 
+AxinDummy();
+
+DummyRaft();
+DummyNonRaft();
+
+
+// ++++++++++++++++++++++++++++
+// +++++ initial solution +++++
+// ++++++++++++++++++++++++++++
+>>INIT[
+	nWnt Wnt +
+    	nCells Cell[
+	  0 DummyRaft +
+	  0 DummyNonRaft +
+	  (1) Membrane[
+	    nLR LR [
+		  nLRP6inLR Lrp6('uP', 'uB') + 
+		  0 Lrp6('uP', 'B') +
+		  0 Lrp6('P', 'uB') +
+		  0 Lrp6('P', 'B') + 
+		  4000 CK1y() + 
+		  0 Lrp6Axin('p') +
+		  0 Lrp6Axin('u')
+		] + 
+		nLRP6 Lrp6('uP', 'uB') + 
+		0 Lrp6('uP', 'B') +
+		0 Lrp6('P', 'uB') +
+		0 Lrp6('P', 'B') + 
+		1000 CK1y() + 
+		0 Lrp6Axin('u') +
+		0 Lrp6Axin('p') + 
+		0 Lrp6Dummy
+	  ] +
+	(nbetacyt) Bcat + 
+	nAxin Axin('u') + 
+	nAxinP Axin('p') + 
+	0 AxinDummy + 
+	Nuc[(nbetanuc) Bcat] + 
+	1 Endosome[0 Lrp6Axin('u') + 0 Lrp6Axin('p') + 0 Lrp6('uP', 'B') + 0 Lrp6Dummy]
+	]
+];
+
+// +++++++++++++++++++++++++++++++
+// +++++ reaction rules ++++++++++
+// +++++++++++++++++++++++++++++++
+
+// ********** Lipid Raft Dynamics *************** 
+
+// (1) Lrp6 diffusion into lipid rafts
+LR[s?] + Lrp6(phos, bind):r -> LR[Lrp6(phos, bind) + s?]
+@ kLRAss * #r / (aa * vm * 0.7); 
+
+// (2) Lrp6 diffusion out of lipid rafts
+LR[Lrp6(phos, bind):r + s?] -> LR[s?] + Lrp6(phos, bind)
+@ kLRAss * #r * nLR / (aa * vm * 0.3); 
+
+// (3) CK1y diffusion into lipid rafts
+LR[s?] + CK1y:r -> LR[CK1y + s?] @ kLRAss * #r / (aa * vm * 0.7);
+
+// (4) CK1y diffusion out of lipid rafts
+LR[CK1y:r + s?] -> LR[s?] + CK1y @ kLRAss * #r * 0.1 * nLR / (aa * vm * 0.3);
+
+// **** Membrane Signalling ****
+
+// (5a) Binding of Wnt to Lrp6 (representing Fz,Lrp6 receptor complex)
+Wnt:w + Cell[Membrane[Lrp6('uP', 'uB'):l + sm?] + s?] ->
+Cell[Membrane[Lrp6('uP', 'B') + sm?] + s?] + Wnt
+@ kLWntBind * #w * #l / (aa * vm * 0.7);
+
+// (5b) Binding of Wnt to Lrp6 in LR (representing Fz,Lrp6 receptor complex)
+Wnt:w + Cell[Membrane[LR[Lrp6('uP', 'uB'):l + sl?] + sm?] + s?] -> 
+Cell[Membrane[LR[Lrp6('uP', 'B') + sl?] + sm?] + s?] + Wnt
+@ kLWntBind * #w * #l * nLR / (aa * vm * 0.3);
+
+// (6a) Dissociation of Wnt from LRP6 (representing Fz, Lrp6 receptor complex)
+Cell[Membrane[Lrp6('uP', 'B'):l + sm?] + s?] ->
+Cell[Membrane[Lrp6('uP', 'uB')  + sm?] + s?] /*+ Wnt*/
+@ kLWntUnbind * #l;
+
+// (6b) Dissociation of Wnt from LRP6 in LR (representing Fz, Lrp6 receptor complex)
+Cell[Membrane[LR[Lrp6('uP', 'B'):l + sl?] + sm?] + s?] ->
+Cell[Membrane[LR[Lrp6('uP', 'uB') + sl?] + sm?] + s?] /*+ Wnt*/
+@ kLWntUnbind * #l;
+
+// (7) Phosphorylation of activated Lrp6 in LR
+LR[CK1y:ck + Lrp6('uP','B'):l + s?] -> LR[Lrp6('P', 'B') + CK1y + s?]
+@ rho * kLphos * #l * #ck;
+
+// (8) Dephosphorylation of Lrp6 
+Lrp6('P', 'B'):l -> Lrp6('uP', 'B') @ kLdephos * #l;
+
+// **** Beta-catenin signalling **** 
+
+// (9) Basal AxinP dephosphorylation
+Axin('p'):a -> Axin('u') @ kApA * #a;
+
+// (10) Axin phosphorylation
+Axin('u'):a -> Axin('p') @ kAAp * #a;
+
+// (11) Axin degradation
+Axin(x):a -> @ kAdeg * #a;
+
+// (12) Activated beta-catenin degradation 
+Axin('p'):a + Bcat:b -> Axin('p') @ kBetaDegAct * #a * #b;
+
+// (13) Beta-catenin synthesis
+Cell[s?] -> Cell[Bcat + s?] @ kBetaSyn;
+
+// (14) Basal beta-catenin degradation
+Bcat:b -> @ kBetaDeg * #b;
+
+// (15) Beta-catenin shuttling into the nucleus
+Bcat:b + Nuc[s?] -> Nuc[Bcat + s?] @ kBetaIn * #b;
+
+// (16) Beta-catenin shuttling out of the nucleus
+Nuc[Bcat:b + s?] -> Bcat + Nuc[s?] @ kBetaOut * #b;
+
+// (17) Axin synthesis
+Nuc[Bcat:b + s?] -> Nuc[Bcat + s?] + Axin('u') + AxinDummy @ kAsyn * #b;
+
+// **** Axin LRP6 signalling **** 
+
+// (18) Axin binding by LRP6 in membrane
+Axin(phos):a + Membrane[Lrp6('P', 'B'):l + s?] -> Membrane[Lrp6Axin(phos) + s?]
+@ kLAxinBind * #l * #a;
+
+// (19) Axin binding by LRP6 in lipid rafts
+Axin(phos):a + Membrane[LR[Lrp6('P','B'):l + s_lr?] + s?] -> 
+Membrane[LR[Lrp6Axin(phos) + s_lr?] + s?] @ kLAxinBind * #l * #a;
+
+// (20) Dissociation of receptor/Axin complex (signalosome) in membrane
+Membrane[Lrp6Axin(phos):la + s_m?] ->
+Membrane[Lrp6('uP', 'uB') + s_m?] + Axin(phos)
+@ kLAxinUnbind * #la;
+
+// (21) Dissociation of receptor/Axin complex (signalosome) in LR
+Membrane[LR[Lrp6Axin(phos):la + s_lr?] + s_m?] ->
+Membrane[LR[Lrp6('uP', 'uB') + s_lr?] + s_m?] + Axin(phos)
+@ kLAxinUnbind * #la;
+
+// (22) LRP6Axin into Endosome
+Membrane[LR[Lrp6Axin(phos):rec + s_l?] + s_m?] + Endosome[s_e?] ->
+Membrane[LR[s_l?] + s_m?] + Endosome[Lrp6Axin(phos) + Lrp6Dummy + s_e?] + DummyRaft
+@ ke_raft * #rec;
+
+// (23) LRP6 into Endosome
+Membrane[Lrp6('uP', 'B'):rec + s_m?] + Endosome[s_e?] ->
+Membrane[s_m?] + Endosome[Lrp6('uP', 'B') + Lrp6Dummy + s_e?] + DummyNonRaft
+@ ke_nonraft * #rec;

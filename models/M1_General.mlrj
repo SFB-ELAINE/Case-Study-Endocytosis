@@ -1,0 +1,65 @@
+// General model refers to model variant that only considers ligand
+// and receptor interaction.
+
+// Author: Fiete Haack
+// Contributed: Kai Budde
+// Last edited: 2020/07/22
+
+
+// +++++++++++++++++++++++
+// ++++++ Constants ++++++
+// +++++++++++++++++++++++
+
+a:  6.022e23;  // Avogadro constant
+vm: 1.37e-14;  // Volume of membrane in (dm)^3 (=1L)
+
+// ++++++++++++++++++++++++++++++++++++
+// ++++++ initial species counts ++++++
+// ++++++++++++++++++++++++++++++++++++
+
+nLrp6: 4000; // Number of initial cell surface receptors
+nWnt:  2000; // Number of initial extracellular ligands
+
+// ++++++++++++++++++++++++++++++++++++++
+// +++++ reaction rate coefficients +++++
+// ++++++++++++++++++++++++++++++++++++++
+
+kLWntBind: 2.16e6; // L/mol/min // Association rate (ligand-receptor)
+kLWntUnbind: 0.02; // 1/min     // Dissociation rate (ligand-receptor)
+ke: 0.05;          // 1/min     // Internalization rate
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// +++++ species definitions (number of attributes) +++++
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Membrane()[];
+Endosome()[];
+Lrp6(string); // Receptor (binding state: 'uB' = unbound , 'B' = bound = ligand-receptor complex))
+Wnt();        // Ligand
+
+// ++++++++++++++++++++++++++++
+// +++++ initial solution +++++
+// ++++++++++++++++++++++++++++
+
+>>INIT[
+ Membrane[
+   nWnt Wnt + 
+   nLrp6 Lrp6('uB') + 
+   0 Lrp6('B')
+  ] +
+ 1 Endosome[0 Lrp6('B')]
+];
+
+// +++++++++++++++++++++++++++++++
+// +++++ reaction rules ++++++++++
+// +++++++++++++++++++++++++++++++
+
+// R1/R2: (Un)Binding of ligand to receptor in membrane (ligand concentration is constant)
+Membrane[Lrp6('uB'):l + Wnt:w + sm?] -> Membrane[Lrp6('B') + Wnt + sm?]
+@ #l * #w * kLWntBind / (a*vm);
+Membrane[Lrp6('B'):l + sm?]          -> Membrane[Lrp6('uB') + sm?]
+@ #l * kLWntUnbind;
+
+// R3: Internalization of ligand-receptor complex
+Membrane[Lrp6('B'):l + s?] + Endosome[se?] ->
+Membrane[s?] + Endosome[Lrp6('B') + se?]  @ #l * ke;
