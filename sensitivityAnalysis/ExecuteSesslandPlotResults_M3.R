@@ -176,6 +176,8 @@ sensitivity::tell(soboljansen_result, simulation_result)
 sensitivity_plot <- ggplot2::ggplot(soboljansen_result)
 
 # Save results
+dir.create("results", showWarnings = FALSE)
+setwd("results")
 filename <- paste(gsub(pattern = " ", replacement = "_", x = Sys.time()),
                   "_SoboljansenResult_n", (dim(LHS_design1)[2]+2)*n, ".Rda", sep="")
 save(soboljansen_result, file = filename)
