@@ -1,0 +1,33 @@
+<project>
+	<modelVersion>4.0.0</modelVersion>
+
+	<name>SESSL Example Project</name>
+	<groupId>org.sessl</groupId>
+	<artifactId>sessl-quickstart</artifactId>
+	<version>0.21</version>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.sessl</groupId>
+			<artifactId>sessl-mlrules</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>net.alchim31.maven</groupId>
+				<artifactId>scala-maven-plugin</artifactId>
+				<version>3.4.4</version>
+				<configuration>
+				  <scriptFile>M3_Sobol.scala</scriptFile>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

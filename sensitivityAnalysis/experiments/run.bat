@@ -1,0 +1,1 @@
+call mvnw scala:script -q
