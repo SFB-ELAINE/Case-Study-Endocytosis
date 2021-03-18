@@ -21,8 +21,8 @@ execute(
                             with StatisticalModelChecking {
 
     model = "../models/M3_Wnt.mlrj"
-    set("nR" <~ 4000)
-    set("nL" <~ 2000)
+    set("nLRP6" <~ 4000)
+    set("nWnt" <~ 2000)
     set("ke_raft" <~ 0.1)
     set("ke_nonraft" <~ 0.1)
 

@@ -9,7 +9,7 @@ analyze((params, objective) =>
     new Experiment with Observation with ExpressionObservation {
 
       model = "../models/M1_General.mlrj"
-      set("nLrp6" <~ 4000)
+      set("nLRP6" <~ 4000)
       set("nWnt" <~ 2000)
       for ((name, value) <- params) {
         set(name <~ value)
