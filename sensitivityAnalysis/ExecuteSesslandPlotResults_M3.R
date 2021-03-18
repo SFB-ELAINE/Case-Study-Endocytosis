@@ -3,7 +3,7 @@
 # a Latin hypercube design for the parameter values using a log scale
 # Authors:      Kai Budde
 # Created:      2021-02-23
-# Last changed: 2021-03-17
+# Last changed: 2021-03-18
 # Used version of Sessl2R: 0.1.3
 #--------------------------------------------------------------------------#
 
@@ -156,13 +156,8 @@ soboljansen_result <- sensitivity::soboljansen(model = NULL, X1 = LHS_design1, X
 
 df_complete <- run_sessl_experiment(soboljansen_result$X)
 
-#simulation_result <- df_complete$LR + df_complete$R
-simulation_result <- df_complete$Lrp6uPuB + df_complete$Lrp6PuB +
-  df_complete$Lrp6uPB + df_complete$Lrp6PB + df_complete$Lrp6Axinu +
-  df_complete$Lrp6Axinp + df_complete$Raft_Lrp6uPuB +
-  df_complete$Raft_Lrp6PuB + df_complete$Raft_Lrp6uPB + 
-  df_complete$Raft_Lrp6PB + df_complete$Raft_Lrp6Axinu +
-  df_complete$Raft_Lrp6Axinp
+simulation_result <- (df_complete$Lrp6 + df_complete$Lrp6Axin) /
+  df_complete$nLRP6
 
 #sensitivity::tell(sobol_result, simulation_result)
 #sensitivity::tell(sobol2002_result, simulation_result)
