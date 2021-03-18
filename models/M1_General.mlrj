@@ -17,7 +17,7 @@ vm: 1.37e-14;  // Volume of membrane in (dm)^3 (=1L)
 // ++++++ initial species counts ++++++
 // ++++++++++++++++++++++++++++++++++++
 
-nLrp6: 4000; // Number of initial cell surface receptors
+nLRP6: 4000; // Number of initial cell surface receptors
 nWnt:  2000; // Number of initial extracellular ligands
 
 // ++++++++++++++++++++++++++++++++++++++
@@ -44,7 +44,7 @@ Wnt();        // Ligand
 >>INIT[
  Membrane[
    nWnt Wnt + 
-   nLrp6 Lrp6('uB') + 
+   nLRP6 Lrp6('uB') + 
    0 Lrp6('B')
   ] +
  1 Endosome[0 Lrp6('B')]
