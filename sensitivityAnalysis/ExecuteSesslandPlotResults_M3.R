@@ -3,7 +3,7 @@
 # a Latin hypercube design for the parameter values using a log scale
 # Authors:      Kai Budde
 # Created:      2021-02-23
-# Last changed: 2021-03-18
+# Last changed: 2021-03-26
 # Used version of Sessl2R: 0.1.3
 #--------------------------------------------------------------------------#
 
@@ -33,55 +33,35 @@ time_begin <- Sys.time()
 # Subdirectory with SESSL script
 dir_sessl_script <- "experiments"
 
-# Deviation from mean for setting the lower and upper bound
-deviation <- 0.1 # 10%
-
-# Parameter values to be used for sensitivity analysis
-kLRAss <- 1e9
-ke_nonraft <- 0.15
-ke_raft    <- 0.15
-nLRP6 <- 4000
-
 # Calculate design of experiment
-n <- 250
+n <- 350
 # Number of design points for simulation: n*(number of parameters + 2)
 
-parameter_names <- c("kLRAss", "ke_nonraft", "ke_raft", "nLRP6")
+parameter_names <- c("kLRAss", "ke_nonraft", "ke_raft")
 
 set.seed(42)
-LHS_design1 <- lhs::optimumLHS(n = n, k = length(parameter_names), maxSweeps = 3)
+LHS_design1 <- lhs::create_oalhs(n = n, k = length(parameter_names), bChooseLargerDesign = TRUE, bverbose = FALSE)
 LHS_design1 <- data.frame(LHS_design1)
 names(LHS_design1) <- parameter_names
+# Rearrange samples for correct results
+LHS_design1 <- LHS_design1[sample(1:length(LHS_design1[[1]]), replace = FALSE),]
 
 set.seed(1234)
-LHS_design2 <- lhs::optimumLHS(n = n, k = length(parameter_names), maxSweeps = 3)
+LHS_design2 <- lhs::create_oalhs(n = n, k = length(parameter_names), bChooseLargerDesign = TRUE, bverbose = FALSE)
 LHS_design2 <- data.frame(LHS_design2)
 names(LHS_design2) <- parameter_names
+# Rearrange samples for correct results
+LHS_design2 <- LHS_design2[sample(1:length(LHS_design2[[1]]), replace = FALSE),]
 
-# LHS design with log scale
-if(kLRAss < 1){log_deviation <- -deviation}else{log_deviation <- deviation}
-LHS_design1$kLRAss <- qunif(LHS_design1$kLRAss, min = (1-log_deviation)*log10(kLRAss), max=(1+log_deviation)*log10(kLRAss))
-LHS_design2$kLRAss <- qunif(LHS_design2$kLRAss, min = (1-log_deviation)*log10(kLRAss), max=(1+log_deviation)*log10(kLRAss))
-LHS_design1$kLRAss <- 10^(LHS_design1$kLRAss)
-LHS_design2$kLRAss <- 10^(LHS_design2$kLRAss)
+# LHS design with min and max values
+LHS_design1$kLRAss <- qunif(LHS_design1$kLRAss, min = 1e08, max=1e10)
+LHS_design2$kLRAss <- qunif(LHS_design2$kLRAss, min = 1e08, max=1e10)
 
-if(ke_nonraft < 1){log_deviation <- -deviation}else{log_deviation <- deviation}
-LHS_design1$ke_nonraft <- qunif(LHS_design1$ke_nonraft, min = (1-log_deviation)*log10(ke_nonraft), max=(1+log_deviation)*log10(ke_nonraft))
-LHS_design2$ke_nonraft <- qunif(LHS_design2$ke_nonraft, min = (1-log_deviation)*log10(ke_nonraft), max=(1+log_deviation)*log10(ke_nonraft))
-LHS_design1$ke_nonraft <- 10^(LHS_design1$ke_nonraft)
-LHS_design2$ke_nonraft <- 10^(LHS_design2$ke_nonraft)
+LHS_design1$ke_nonraft <- qunif(LHS_design1$ke_nonraft, min = 0.01, max=0.5)
+LHS_design2$ke_nonraft <- qunif(LHS_design2$ke_nonraft, min = 0.01, max=0.5)
 
-if(ke_raft < 1){log_deviation <- -deviation}else{log_deviation <- deviation}
-LHS_design1$ke_raft <- qunif(LHS_design1$ke_raft, min = (1-log_deviation)*log10(ke_raft), max=(1+log_deviation)*log10(ke_raft))
-LHS_design2$ke_raft <- qunif(LHS_design2$ke_raft, min = (1-log_deviation)*log10(ke_raft), max=(1+log_deviation)*log10(ke_raft))
-LHS_design1$ke_raft <- 10^(LHS_design1$ke_raft)
-LHS_design2$ke_raft <- 10^(LHS_design2$ke_raft)
-
-if(nLRP6 < 1){log_deviation <- -deviation}else{log_deviation <- deviation}
-LHS_design1$nLRP6 <- qunif(LHS_design1$nLRP6, min = (1-log_deviation)*log10(nLRP6), max=(1+log_deviation)*log10(nLRP6))
-LHS_design2$nLRP6 <- qunif(LHS_design2$nLRP6, min = (1-log_deviation)*log10(nLRP6), max=(1+log_deviation)*log10(nLRP6))
-LHS_design1$nLRP6 <- 10^(LHS_design1$nLRP6)
-LHS_design2$nLRP6 <- 10^(LHS_design2$nLRP6)
+LHS_design1$ke_raft <- qunif(LHS_design1$ke_raft, min = 0.01, max=0.5)
+LHS_design2$ke_raft <- qunif(LHS_design2$ke_raft, min = 0.01, max=0.5)
 
 # Call Sessl script with the parameter values of x$X
 run_sessl_experiment <- function(design) {
@@ -146,28 +126,16 @@ run_sessl_experiment <- function(design) {
 
 
 #Sensitivity analysis
-
-#sobol_result         <- sensitivity::sobol2002(model = NULL, X1 = LHS_design1, X2 = LHS_design2, nboot = 100, conf = 0.95)
-#sobol2002_result     <- sensitivity::sobol2002(model = NULL, X1 = LHS_design1, X2 = LHS_design2, nboot = 100, conf = 0.95)
-#soboljansen_result   <- sensitivity::soboljansen(model = NULL, X1 = LHS_design1, X2 = LHS_design2, nboot = 100, conf = 0.95)
-#sobolmartinez_result <- sensitivity::sobolmartinez(model = NULL, X1 = LHS_design1, X2 = LHS_design2, nboot = 100, conf = 0.95)
-
-soboljansen_result <- sensitivity::soboljansen(model = NULL, X1 = LHS_design1, X2 = LHS_design2, nboot = 100, conf = 0.95)
+soboljansen_result <- sensitivity::soboljansen(
+  model = NULL, X1 = LHS_design1, X2 = LHS_design2,
+  nboot = 100, conf = 0.95)
 
 df_complete <- run_sessl_experiment(soboljansen_result$X)
 
-simulation_result <- (df_complete$Lrp6 + df_complete$Lrp6Axin) /
-  df_complete$nLRP6
+simulation_result <- (df_complete$Lrp6 + df_complete$Lrp6Axin) / 4000
+# (4000 is the number of total LRP6 in the membrane in the beginning)
 
-#sensitivity::tell(sobol_result, simulation_result)
-#sensitivity::tell(sobol2002_result, simulation_result)
-#sensitivity::tell(sobolmartinez_result, simulation_result)
 sensitivity::tell(soboljansen_result, simulation_result)
-
-#plot(sobol_result)
-#plot(sobol2002_result)
-#plot(soboljansen_result)
-#plot(sobolmartinez_result)
 sensitivity_plot <- ggplot2::ggplot(soboljansen_result)
 
 # Save results
