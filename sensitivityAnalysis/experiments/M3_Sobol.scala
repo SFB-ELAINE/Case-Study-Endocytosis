@@ -7,13 +7,14 @@ execute {
 
     model = "../../models/M3_Wnt.mlrj"
 
-    simulator = HybridSimulator()
+    simulator = SimpleSimulator()
+    //simulator = HybridSimulator()
 
     parallelThreads = -1
 
     val stoppingTime = 61
     stopTime = stoppingTime
-    replications = 1
+    replications = 100
 
     designFromCSV("designOfExperiment.csv")
 

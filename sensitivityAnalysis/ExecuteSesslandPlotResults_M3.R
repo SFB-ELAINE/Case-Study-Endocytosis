@@ -3,7 +3,7 @@
 # a Latin hypercube design for the parameter values using a log scale
 # Authors:      Kai Budde
 # Created:      2021-02-23
-# Last changed: 2021-03-26
+# Last changed: 2021-04-01
 # Used version of Sessl2R: 0.1.3
 #--------------------------------------------------------------------------#
 
@@ -13,6 +13,7 @@ remove(list = ls())
 library(sensitivity)
 library(lhs)
 library(ggplot2)
+library(dplyr)
 
 # Install the R package for using Sessl output data
 devtools::install_github("SFB-ELAINE/Sessl2R", ref = "v0.1.3")
@@ -116,10 +117,18 @@ run_sessl_experiment <- function(design) {
     rm(loaded_dataframe)
   }
   
+  # Calculate standard deviation and mean values
+  df_complete <- dplyr::group_by(df_complete, directory, config) %>%
+    summarise(Lrp6_variance = sd(Lrp6), Lrp6Axin_variance = sd(Lrp6Axin),
+              across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+  
+  df_complete <- as.data.frame(df_complete)
+  
   setwd(directory_of_R_script)
   
   df_complete <- df_complete[order(df_complete$config),]
   df_complete <- df_complete[order(df_complete$run),]
+  row.names(df_complete) <- NULL
   
   return(df_complete)
 }
